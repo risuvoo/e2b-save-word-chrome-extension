@@ -7,6 +7,7 @@ const SUGGESTION_LIMIT = 8;
 const state = {
   words: {},
   view: 'dashboard',
+  searchMode: 'saved',
   query: '',
   activeLetter: 'ALL',
   preview: null,
@@ -28,12 +29,16 @@ const elements = {
   showList: $('showList'),
   searchWrap: $('searchWrap'),
   searchInput: $('searchInput'),
+  searchToggle: $('searchToggle'),
+  toggleSaved: $('toggleSaved'),
+  toggleDictionary: $('toggleDictionary'),
   suggestions: $('suggestions'),
   azBar: $('azBar'),
   listRegion: $('listRegion'),
   wordList: $('wordList'),
   emptyState: $('emptyState'),
   noResults: $('noResults'),
+  dictEmptyState: $('dictEmptyState'),
   dashboardStatus: $('dashboardStatus'),
   appFooter: $('appFooter'),
   footerCount: $('footerCount'),
@@ -154,8 +159,117 @@ function updateAzBar() {
   }
 }
 
+let dictionaryMap = null;
+let dictionaryList = null;
+let dictionaryLoading = null;
+
+async function ensureDictionary() {
+  if (dictionaryList && dictionaryMap) {
+    return { map: dictionaryMap, list: dictionaryList };
+  }
+  if (dictionaryLoading) return dictionaryLoading;
+
+  dictionaryLoading = (async () => {
+    try {
+      const response = await fetch(chrome.runtime.getURL('data/dictionary.txt'));
+      if (!response.ok) throw new Error(`Status ${response.status}`);
+      const text = await response.text();
+      const source = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+      const collected = new Map();
+      for (const line of source.split(/\r?\n/)) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#') || !trimmed.startsWith('|')) continue;
+        const second = trimmed.indexOf('|', 1);
+        if (second === -1) continue;
+        const english = trimmed.slice(1, second).trim().toLowerCase();
+        const bangla = trimmed.slice(second + 1).trim();
+        if (!english) continue;
+        const meanings = collected.get(english);
+        if (!meanings) {
+          collected.set(english, bangla ? [bangla] : []);
+        } else if (bangla && !meanings.includes(bangla)) {
+          meanings.push(bangla);
+        }
+      }
+      dictionaryMap = new Map();
+      dictionaryList = [];
+      for (const [english, meanings] of collected) {
+        const meaning = meanings.join('; ');
+        dictionaryMap.set(english, meaning);
+        dictionaryList.push({
+          key: english,
+          word: english,
+          meaning,
+        });
+      }
+    } catch (error) {
+      console.warn('E2B Save Word: could not load dictionary in popup.', error);
+      dictionaryMap = new Map();
+      dictionaryList = [];
+    } finally {
+      dictionaryLoading = null;
+    }
+    return { map: dictionaryMap, list: dictionaryList };
+  })();
+
+  return dictionaryLoading;
+}
+
+function setSearchMode(mode) {
+  if (state.searchMode === mode) return;
+  state.searchMode = mode;
+
+  elements.toggleSaved.setAttribute('aria-pressed', String(mode === 'saved'));
+  elements.toggleSaved.classList.toggle('is-active', mode === 'saved');
+
+  elements.toggleDictionary.setAttribute('aria-pressed', String(mode === 'dictionary'));
+  elements.toggleDictionary.classList.toggle('is-active', mode === 'dictionary');
+
+  if (mode === 'dictionary') {
+    elements.searchInput.placeholder = 'Search dictionary...';
+    if (!dictionaryList) {
+      ensureDictionary().then(() => {
+        renderSuggestions();
+        renderDashboard();
+      });
+    } else {
+      renderSuggestions();
+      renderDashboard();
+    }
+  } else {
+    elements.searchInput.placeholder = 'Search saved words...';
+    renderSuggestions();
+    renderDashboard();
+  }
+
+  elements.searchInput.focus();
+}
+
 function visibleEntries() {
   const query = state.query.trim().toLowerCase();
+
+  if (state.searchMode === 'dictionary') {
+    if (!dictionaryList) return [];
+    if (!query && state.activeLetter === 'ALL') {
+      return [];
+    }
+
+    let entries = dictionaryList;
+    if (query) {
+      const prefix = [];
+      const substring = [];
+      for (const entry of entries) {
+        if (entry.key.startsWith(query)) prefix.push(entry);
+        else if (entry.key.includes(query)) substring.push(entry);
+      }
+      entries = [...prefix.sort(compareWords), ...substring.sort(compareWords)];
+    }
+    if (state.activeLetter !== 'ALL') {
+      entries = entries.filter((entry) => letterOf(entry) === state.activeLetter);
+    }
+    return entries.slice(0, 100);
+  }
+
   let entries = wordEntries();
 
   if (query) {
@@ -169,12 +283,36 @@ function visibleEntries() {
 
 function renderDashboard() {
   const total = Object.keys(state.words).length;
-  elements.footerCount.textContent = `${total} ${total === 1 ? 'word' : 'words'}`;
   elements.dashboardStatus.textContent = '';
 
   const entries = visibleEntries();
   elements.wordList.replaceChildren();
   elements.listRegion.scrollTop = 0;
+
+  if (state.searchMode === 'dictionary') {
+    elements.emptyState.hidden = true;
+    const isDefaultBlank = !state.query.trim() && state.activeLetter === 'ALL';
+    elements.dictEmptyState.hidden = !isDefaultBlank;
+    elements.noResults.hidden = isDefaultBlank || entries.length > 0;
+    elements.wordList.hidden = entries.length === 0;
+
+    if (isDefaultBlank) {
+      const count = dictionaryList ? dictionaryList.length : 13506;
+      elements.footerCount.textContent = `${count} words in dictionary`;
+    } else {
+      elements.footerCount.textContent = `${entries.length} ${entries.length === 1 ? 'match' : 'matches'}`;
+    }
+
+    if (entries.length === 0) return;
+
+    for (const entry of entries) {
+      elements.wordList.append(createWordRow(entry));
+    }
+    return;
+  }
+
+  elements.dictEmptyState.hidden = true;
+  elements.footerCount.textContent = `${total} ${total === 1 ? 'word' : 'words'}`;
 
   elements.emptyState.hidden = total !== 0;
   elements.noResults.hidden = !(total > 0 && entries.length === 0);
@@ -237,19 +375,43 @@ function createWordRow(entry) {
 
   text.append(word, meaning);
 
-  const remove = document.createElement('button');
-  remove.type = 'button';
-  remove.className = 'icon-button';
-  remove.dataset.key = entry.key;
-  remove.setAttribute('aria-label', `Delete ${entry.word}`);
-  remove.title = `Delete ${entry.word}`;
-  remove.textContent = '×';
+  if (state.searchMode === 'dictionary') {
+    const isSaved = Boolean(state.words && Object.prototype.hasOwnProperty.call(state.words, entry.key));
+    if (isSaved) {
+      const badge = document.createElement('span');
+      badge.className = 'saved-badge';
+      badge.textContent = '✓ Saved';
+      badge.title = 'Saved in your list';
+      row.append(text, badge);
+    } else {
+      const saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.className = 'icon-button icon-button-add';
+      saveBtn.dataset.key = entry.key;
+      saveBtn.dataset.word = entry.word;
+      saveBtn.dataset.meaning = entry.meaning || '';
+      saveBtn.dataset.action = 'save';
+      saveBtn.setAttribute('aria-label', `Save ${entry.word}`);
+      saveBtn.title = `Save "${entry.word}" to your list`;
+      saveBtn.textContent = '+';
+      row.append(text, saveBtn);
+    }
+  } else {
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'icon-button';
+    remove.dataset.key = entry.key;
+    remove.dataset.action = 'delete';
+    remove.setAttribute('aria-label', `Delete ${entry.word}`);
+    remove.title = `Delete ${entry.word}`;
+    remove.textContent = '×';
+    row.append(text, remove);
+  }
 
-  row.append(text, remove);
   return row;
 }
 
-function renderSuggestions() {
+async function renderSuggestions() {
   const query = state.query.trim().toLowerCase();
   elements.suggestions.replaceChildren();
 
@@ -258,14 +420,26 @@ function renderSuggestions() {
     return;
   }
 
-  const entries = wordEntries();
+  let sourceList;
+  if (state.searchMode === 'dictionary') {
+    if (!dictionaryList) await ensureDictionary();
+    sourceList = dictionaryList || [];
+  } else {
+    sourceList = wordEntries();
+  }
+
+  if (state.query.trim().toLowerCase() !== query) return;
+
   const prefix = [];
   const substring = [];
 
-  for (const entry of entries) {
-    const lower = entry.word.toLowerCase();
-    if (lower.startsWith(query)) prefix.push(entry);
-    else if (lower.includes(query)) substring.push(entry);
+  for (const entry of sourceList) {
+    const lower = entry.key;
+    if (lower.startsWith(query)) {
+      prefix.push(entry);
+    } else if (lower.includes(query)) {
+      substring.push(entry);
+    }
   }
 
   const matches = [...prefix.sort(compareWords), ...substring.sort(compareWords)].slice(
@@ -438,6 +612,9 @@ function bindEvents() {
     elements.previewStatus.textContent = 'Meaning saved.';
   });
 
+  elements.toggleSaved.addEventListener('click', () => setSearchMode('saved'));
+  elements.toggleDictionary.addEventListener('click', () => setSearchMode('dictionary'));
+
   elements.searchInput.addEventListener('input', () => {
     state.query = elements.searchInput.value;
     renderSuggestions();
@@ -445,7 +622,7 @@ function bindEvents() {
   });
 
   elements.searchInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
+    if (event.key === 'Escape' || event.key === 'Enter') {
       elements.suggestions.hidden = true;
     }
   });
@@ -464,9 +641,28 @@ function bindEvents() {
     renderDashboard();
   });
 
-  elements.wordList.addEventListener('click', (event) => {
+  elements.wordList.addEventListener('click', async (event) => {
     const button = event.target.closest('button[data-key]');
     if (!button) return;
+
+    if (button.dataset.action === 'save') {
+      const word = button.dataset.word;
+      const meaning = button.dataset.meaning || '';
+      button.disabled = true;
+      const response = await sendMessage('save-word', { word, meaning });
+      if (response && response.ok) {
+        const stored = await chrome.storage.local.get('words');
+        state.words = stored.words || {};
+        renderDashboard();
+        elements.dashboardStatus.textContent = `"${word}" saved to your list.`;
+      } else {
+        button.disabled = false;
+        elements.dashboardStatus.textContent =
+          (response && response.error) || 'Could not save the word.';
+      }
+      return;
+    }
+
     requestDelete(button.dataset.key);
   });
 
@@ -518,6 +714,8 @@ function bindEvents() {
 /* ------------------------------------------------------------------ */
 
 async function start() {
+  ensureDictionary();
+
   if (elements.copyrightYear) {
     elements.copyrightYear.textContent = new Date().getFullYear();
   }

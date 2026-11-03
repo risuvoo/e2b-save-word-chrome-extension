@@ -64,14 +64,34 @@
                 <path d="M13 13l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
               </svg>
             </span>
-            <label class="sr-only" for="searchInput">Search saved words</label>
+            <label class="sr-only" for="searchInput">Search words</label>
             <input
               id="searchInput"
               type="search"
-              placeholder="Search words..."
+              placeholder="Search saved words..."
               autocomplete="off"
               spellcheck="false"
             />
+            <div id="searchToggle" class="search-toggle" role="group" aria-label="Search scope">
+              <button
+                id="toggleSaved"
+                class="search-toggle-btn is-active"
+                type="button"
+                aria-pressed="true"
+                title="Search in saved words"
+              >
+                Saved words
+              </button>
+              <button
+                id="toggleDictionary"
+                class="search-toggle-btn"
+                type="button"
+                aria-pressed="false"
+                title="Search in dictionary"
+              >
+                Dictionary
+              </button>
+            </div>
             <div id="suggestions" class="suggestions" role="listbox" aria-label="Search suggestions" hidden></div>
           </div>
 
@@ -93,6 +113,13 @@
             <div id="noResults" class="empty-state" hidden>
               <p class="empty-title">No matches</p>
               <p>Try another spelling, letter, or clear the search.</p>
+            </div>
+            <div id="dictEmptyState" class="empty-state" hidden>
+              <p class="empty-title">Search Dictionary</p>
+              <p class="empty-note">
+                Search from over 13,500 English words with Bangla meanings.
+                <span class="empty-note-bangla">ইংরেজি শব্দ লিখে ডিকশনারি থেকে অর্থ খুঁজুন।</span>
+              </p>
             </div>
             <div id="wordList" class="word-list"></div>
           </div>

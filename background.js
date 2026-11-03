@@ -141,6 +141,39 @@ async function saveWord(rawWord) {
   return entry;
 }
 
+/**
+ * Save a word directly from the popup search/dictionary interface without
+ * opening the preview window.
+ */
+async function saveWordDirect(rawWord, rawMeaning) {
+  const word = normalizeWord(rawWord);
+  if (!word) return null;
+
+  const key = keyFor(word);
+  const meaning = typeof rawMeaning === 'string' ? rawMeaning.trim() : '';
+
+  return withLock(async () => {
+    const stored = await chrome.storage.local.get('words');
+    const words = stored.words || {};
+    let saved = words[key];
+
+    if (!saved) {
+      saved = {
+        word,
+        meaning,
+        savedAt: Date.now(),
+      };
+      words[key] = saved;
+      await chrome.storage.local.set({ words });
+    } else if (!saved.meaning && meaning) {
+      saved.meaning = meaning;
+      await chrome.storage.local.set({ words });
+    }
+
+    return saved;
+  });
+}
+
 async function updateMeaning(rawKey, rawMeaning) {
   const key = String(rawKey || '').toLowerCase();
   const meaning = typeof rawMeaning === 'string' ? rawMeaning.trim() : '';
@@ -258,6 +291,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   let operation;
   switch (message.type) {
+    case 'save-word':
+      operation = saveWordDirect(message.word, message.meaning);
+      break;
     case 'update-meaning':
       operation = updateMeaning(message.key, message.meaning);
       break;
