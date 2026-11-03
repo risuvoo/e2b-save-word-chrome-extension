@@ -1,0 +1,36 @@
+schema: spec-driven
+
+# Project context — constraints an agent cannot infer from the code.
+# Coding rules, snippets, and MV3 gotchas live in AGENTS.md, not here.
+context: |
+  E2B Save Word is a Chrome Manifest V3 extension with no build step, no npm
+  dependencies, and no automated tests. All verification is manual: load unpacked
+  at chrome://extensions and click the reload icon after each edit.
+
+  Target Chrome 127+ (required for chrome.action.openPopup). Development is on Windows.
+
+  Dictionary format is a fixed contract: UTF-8 text, one "|English word|Bangla meaning"
+  entry per line, parsed on the first two pipe characters. Repeated headwords merge their
+  distinct meanings in file order, joined with "; ".
+
+  Write all artifacts in English.
+
+# Per-artifact rules.
+rules:
+  proposal:
+    - Always state what is out of scope.
+    - Flag any change to the chrome.storage.local schema (keys "words" or "preview"); it is a migration concern.
+  design:
+    - State the impact on the service worker, popup, and storage-schema boundaries.
+  tasks:
+    - End every task list with concrete manual verification steps; no automated test suite exists.
+
+# Per-operation guidance.
+operations:
+  apply:
+    guidance:
+      - Follow the MV3 gotchas in AGENTS.md.
+      - Keep the popup as a single page with two views (preview and dashboard); do not add a second popup page.
+  archive:
+    guidance:
+      - Summarize what shipped in one paragraph before finishing.

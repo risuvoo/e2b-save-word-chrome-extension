@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>E2B Save Word</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <div class="brand">
+          <img class="brand-mark" src="assets/logos/icon-48.png" alt="E2B Save Word logo" />
+          <div class="brand-text">
+            <h1>Save Word</h1>
+            <p>English to Bangla</p>
+          </div>
+        </div>
+        <span id="headerCount" class="count-badge" hidden></span>
+      </header>
+
+      <main class="app-main">
+        <section id="previewView" class="view view-preview" hidden>
+          <h2 class="sr-only">Saved word preview</h2>
+
+          <div class="preview-card">
+            <p class="eyebrow">Saved to your list</p>
+
+            <div class="equation">
+              <span id="previewWord" class="preview-word"></span>
+              <span class="preview-equals" aria-hidden="true">=</span>
+              <span id="previewMeaning" class="preview-meaning"></span>
+            </div>
+
+            <form id="meaningForm" class="meaning-form" hidden>
+              <label for="meaningInput">Add the Bangla meaning</label>
+              <div class="meaning-row">
+                <input
+                  id="meaningInput"
+                  type="text"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="যেমন: শব্দ"
+                />
+                <button class="btn btn-secondary" type="submit">Save</button>
+              </div>
+            </form>
+
+            <p id="previewStatus" class="status" role="status"></p>
+          </div>
+
+          <button id="showList" class="btn btn-primary btn-block" type="button">
+            List of words
+          </button>
+        </section>
+
+        <section id="dashboardView" class="view view-dashboard" hidden>
+          <h2 class="sr-only">Word list</h2>
+
+          <div id="searchWrap" class="search-wrap">
+            <span class="search-icon" aria-hidden="true">
+              <svg viewBox="0 0 20 20" width="16" height="16" fill="none">
+                <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.6" />
+                <path d="M13 13l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              </svg>
+            </span>
+            <label class="sr-only" for="searchInput">Search saved words</label>
+            <input
+              id="searchInput"
+              type="search"
+              placeholder="Search words..."
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <div id="suggestions" class="suggestions" role="listbox" aria-label="Search suggestions" hidden></div>
+          </div>
+
+          <nav id="azBar" class="az-bar" aria-label="Filter words by first letter"></nav>
+
+          <div id="listRegion" class="list-region">
+            <div id="emptyState" class="empty-state" hidden>
+              <p class="empty-title">Start your word list</p>
+              <ol class="empty-steps">
+                <li>Select an English word on any web page.</li>
+                <li>Right-click the selected word.</li>
+                <li>Click <strong>Save "…"</strong> in the menu — the menu shows the word you selected.</li>
+              </ol>
+              <p class="empty-note">
+                The word appears here with its Bangla meaning.
+                <span class="empty-note-bangla">ওয়েব পেজে ইংরেজি শব্দ সিলেক্ট করে রাইট-ক্লিক করুন।</span>
+              </p>
+            </div>
+            <div id="noResults" class="empty-state" hidden>
+              <p class="empty-title">No matches</p>
+              <p>Try another spelling, letter, or clear the search.</p>
+            </div>
+            <div id="wordList" class="word-list"></div>
+          </div>
+
+          <p id="dashboardStatus" class="status status-dashboard" role="status"></p>
+        </section>
+      </main>
+
+      <footer id="appFooter" class="app-footer" hidden>
+        <span id="footerCount" class="footer-count">0 words</span>
+        <div class="footer-actions">
+          <button id="exportButton" class="btn btn-ghost" type="button">Export</button>
+          <button id="importButton" class="btn btn-ghost" type="button">Import</button>
+          <input id="importFile" type="file" accept="application/json,.json" hidden />
+        </div>
+      </footer>
+    </div>
+
+    <dialog id="deleteDialog" class="dialog">
+      <form method="dialog">
+        <h2>Delete word?</h2>
+        <p>
+          <strong id="deleteWordName"></strong> will be removed from your list. This cannot be
+          undone.
+        </p>
+        <div class="dialog-actions">
+          <button class="btn btn-secondary" value="cancel" type="submit">Cancel</button>
+          <button id="confirmDelete" class="btn btn-danger" type="button">Delete</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

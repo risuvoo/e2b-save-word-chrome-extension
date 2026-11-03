@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "E2B Save Word",
+  "version": "1.0.0",
+  "description": "Save any selected English word and see its Bangla meaning from a bundled dictionary.",
+  "minimum_chrome_version": "127",
+  "permissions": ["contextMenus", "storage"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "E2B Save Word",
+    "default_icon": {
+      "24": "assets/logos/icon-24.png",
+      "48": "assets/logos/icon-48.png",
+      "72": "assets/logos/icon-72.png",
+      "192": "assets/logos/icon-192.png"
+    }
+  },
+  "icons": {
+    "24": "assets/logos/icon-24.png",
+    "48": "assets/logos/icon-48.png",
+    "72": "assets/logos/icon-72.png",
+    "192": "assets/logos/icon-192.png"
+  }
+}
