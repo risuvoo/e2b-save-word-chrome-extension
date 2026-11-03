@@ -517,13 +517,18 @@ input[type="search"]:focus-visible {
 
 .app-footer {
   display: flex;
+  flex-direction: column;
   flex: none;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.footer-main {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 9px 14px;
-  border-top: 1px solid var(--line);
-  background: var(--surface);
+  padding: 7px 14px 6px;
 }
 
 .footer-count {
@@ -534,6 +539,26 @@ input[type="search"]:focus-visible {
 .footer-actions {
   display: flex;
   gap: 6px;
+}
+
+.footer-copyright {
+  padding: 4px 14px 5px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+  color: var(--muted);
+  font-size: 9.5px;
+  line-height: 1.25;
+}
+
+.footer-copyright a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 600;
+}
+
+.footer-copyright a:hover {
+  color: var(--accent-strong);
 }
 
 /* Buttons */

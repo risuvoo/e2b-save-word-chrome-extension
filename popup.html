@@ -102,11 +102,16 @@
       </main>
 
       <footer id="appFooter" class="app-footer" hidden>
-        <span id="footerCount" class="footer-count">0 words</span>
-        <div class="footer-actions">
-          <button id="exportButton" class="btn btn-ghost" type="button">Export</button>
-          <button id="importButton" class="btn btn-ghost" type="button">Import</button>
-          <input id="importFile" type="file" accept="application/json,.json" hidden />
+        <div class="footer-main">
+          <span id="footerCount" class="footer-count">0 words</span>
+          <div class="footer-actions">
+            <button id="exportButton" class="btn btn-ghost" type="button">Export</button>
+            <button id="importButton" class="btn btn-ghost" type="button">Import</button>
+            <input id="importFile" type="file" accept="application/json,.json" hidden />
+          </div>
+        </div>
+        <div class="footer-copyright">
+          &copy; <span id="copyrightYear"></span> All rights reserved. | Developed by <a href="https://risuvo.com/" target="_blank" rel="noopener noreferrer">RI Suvo</a>
         </div>
       </footer>
     </div>

@@ -37,6 +37,7 @@ const elements = {
   dashboardStatus: $('dashboardStatus'),
   appFooter: $('appFooter'),
   footerCount: $('footerCount'),
+  copyrightYear: $('copyrightYear'),
   exportButton: $('exportButton'),
   importButton: $('importButton'),
   importFile: $('importFile'),
@@ -517,6 +518,10 @@ function bindEvents() {
 /* ------------------------------------------------------------------ */
 
 async function start() {
+  if (elements.copyrightYear) {
+    elements.copyrightYear.textContent = new Date().getFullYear();
+  }
+
   bindEvents();
   buildAzBar();
 
