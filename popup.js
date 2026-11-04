@@ -2,7 +2,6 @@
 
 const PREVIEW_TTL_MS = 10 * 60 * 1000;
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-const SUGGESTION_LIMIT = 8;
 
 const state = {
   words: {},
@@ -32,7 +31,6 @@ const elements = {
   searchToggle: $('searchToggle'),
   toggleSaved: $('toggleSaved'),
   toggleDictionary: $('toggleDictionary'),
-  suggestions: $('suggestions'),
   azBar: $('azBar'),
   listRegion: $('listRegion'),
   wordList: $('wordList'),
@@ -229,16 +227,13 @@ function setSearchMode(mode) {
     elements.searchInput.placeholder = 'Search dictionary...';
     if (!dictionaryList) {
       ensureDictionary().then(() => {
-        renderSuggestions();
         renderDashboard();
       });
     } else {
-      renderSuggestions();
       renderDashboard();
     }
   } else {
     elements.searchInput.placeholder = 'Search saved words...';
-    renderSuggestions();
     renderDashboard();
   }
 
@@ -411,80 +406,6 @@ function createWordRow(entry) {
   return row;
 }
 
-async function renderSuggestions() {
-  const query = state.query.trim().toLowerCase();
-  elements.suggestions.replaceChildren();
-
-  if (!query) {
-    elements.suggestions.hidden = true;
-    return;
-  }
-
-  let sourceList;
-  if (state.searchMode === 'dictionary') {
-    if (!dictionaryList) await ensureDictionary();
-    sourceList = dictionaryList || [];
-  } else {
-    sourceList = wordEntries();
-  }
-
-  if (state.query.trim().toLowerCase() !== query) return;
-
-  const prefix = [];
-  const substring = [];
-
-  for (const entry of sourceList) {
-    const lower = entry.key;
-    if (lower.startsWith(query)) {
-      prefix.push(entry);
-    } else if (lower.includes(query)) {
-      substring.push(entry);
-    }
-  }
-
-  const matches = [...prefix.sort(compareWords), ...substring.sort(compareWords)].slice(
-    0,
-    SUGGESTION_LIMIT
-  );
-
-  if (matches.length === 0) {
-    elements.suggestions.hidden = true;
-    return;
-  }
-
-  for (const entry of matches) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'suggestion';
-    button.dataset.word = entry.word;
-    button.setAttribute('role', 'option');
-    button.setAttribute('aria-selected', 'false');
-
-    const word = document.createElement('span');
-    word.className = 'suggestion-word';
-    word.textContent = entry.word;
-
-    const meaning = document.createElement('span');
-    meaning.className = 'suggestion-meaning';
-    meaning.textContent = entry.meaning || '—';
-
-    button.append(word, meaning);
-    elements.suggestions.append(button);
-  }
-
-  elements.suggestions.hidden = false;
-}
-
-function chooseSuggestion(word) {
-  state.query = word;
-  state.activeLetter = 'ALL';
-  elements.searchInput.value = word;
-  elements.suggestions.hidden = true;
-  updateAzBar();
-  renderDashboard();
-  elements.searchInput.focus();
-}
-
 /* ------------------------------------------------------------------ */
 /* Delete                                                             */
 /* ------------------------------------------------------------------ */
@@ -617,20 +538,7 @@ function bindEvents() {
 
   elements.searchInput.addEventListener('input', () => {
     state.query = elements.searchInput.value;
-    renderSuggestions();
     renderDashboard();
-  });
-
-  elements.searchInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' || event.key === 'Enter') {
-      elements.suggestions.hidden = true;
-    }
-  });
-
-  elements.suggestions.addEventListener('click', (event) => {
-    const button = event.target.closest('button[data-word]');
-    if (!button) return;
-    chooseSuggestion(button.dataset.word);
   });
 
   elements.azBar.addEventListener('click', (event) => {
@@ -671,12 +579,6 @@ function bindEvents() {
   elements.deleteDialog.addEventListener('close', () => {
     state.pendingDeleteKey = null;
     elements.confirmDelete.disabled = false;
-  });
-
-  document.addEventListener('click', (event) => {
-    if (!elements.searchWrap.contains(event.target)) {
-      elements.suggestions.hidden = true;
-    }
   });
 
   elements.exportButton.addEventListener('click', exportWords);

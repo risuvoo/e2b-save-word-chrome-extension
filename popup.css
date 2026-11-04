@@ -321,54 +321,6 @@ input[type="search"]:focus-visible {
   outline-offset: 1px;
 }
 
-.suggestions {
-  position: absolute;
-  z-index: 20;
-  top: calc(100% + 4px);
-  right: 0;
-  left: 0;
-  max-height: 200px;
-  overflow-y: auto;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--surface-strong);
-  box-shadow: var(--shadow);
-}
-
-.suggestion {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  padding: 8px 12px;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.suggestion:hover,
-.suggestion:focus-visible {
-  background: var(--accent-soft);
-  outline: none;
-}
-
-.suggestion-word {
-  font-weight: 600;
-}
-
-.suggestion-meaning {
-  overflow: hidden;
-  color: var(--muted);
-  font-family: var(--font-bangla);
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .az-bar {
   display: flex;
   flex: none;
