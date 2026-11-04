@@ -1,14 +1,14 @@
-'use strict';
+"use strict";
 
 const PREVIEW_TTL_MS = 10 * 60 * 1000;
-const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 const state = {
   words: {},
-  view: 'dashboard',
-  searchMode: 'saved',
-  query: '',
-  activeLetter: 'ALL',
+  view: "dashboard",
+  searchMode: "saved",
+  query: "",
+  activeLetter: "ALL",
   preview: null,
   pendingDeleteKey: null,
 };
@@ -18,35 +18,35 @@ function $(id) {
 }
 
 const elements = {
-  previewView: $('previewView'),
-  dashboardView: $('dashboardView'),
-  previewWord: $('previewWord'),
-  previewMeaning: $('previewMeaning'),
-  previewStatus: $('previewStatus'),
-  meaningForm: $('meaningForm'),
-  meaningInput: $('meaningInput'),
-  showList: $('showList'),
-  searchWrap: $('searchWrap'),
-  searchInput: $('searchInput'),
-  searchToggle: $('searchToggle'),
-  toggleSaved: $('toggleSaved'),
-  toggleDictionary: $('toggleDictionary'),
-  azBar: $('azBar'),
-  listRegion: $('listRegion'),
-  wordList: $('wordList'),
-  emptyState: $('emptyState'),
-  noResults: $('noResults'),
-  dictEmptyState: $('dictEmptyState'),
-  dashboardStatus: $('dashboardStatus'),
-  appFooter: $('appFooter'),
-  footerCount: $('footerCount'),
-  copyrightYear: $('copyrightYear'),
-  exportButton: $('exportButton'),
-  importButton: $('importButton'),
-  importFile: $('importFile'),
-  deleteDialog: $('deleteDialog'),
-  deleteWordName: $('deleteWordName'),
-  confirmDelete: $('confirmDelete'),
+  previewView: $("previewView"),
+  dashboardView: $("dashboardView"),
+  previewWord: $("previewWord"),
+  previewMeaning: $("previewMeaning"),
+  previewStatus: $("previewStatus"),
+  meaningForm: $("meaningForm"),
+  meaningInput: $("meaningInput"),
+  showList: $("showList"),
+  searchWrap: $("searchWrap"),
+  searchInput: $("searchInput"),
+  searchToggle: $("searchToggle"),
+  toggleSaved: $("toggleSaved"),
+  toggleDictionary: $("toggleDictionary"),
+  azBar: $("azBar"),
+  listRegion: $("listRegion"),
+  wordList: $("wordList"),
+  emptyState: $("emptyState"),
+  noResults: $("noResults"),
+  dictEmptyState: $("dictEmptyState"),
+  dashboardStatus: $("dashboardStatus"),
+  appFooter: $("appFooter"),
+  footerCount: $("footerCount"),
+  copyrightYear: $("copyrightYear"),
+  exportButton: $("exportButton"),
+  importButton: $("importButton"),
+  importFile: $("importFile"),
+  deleteDialog: $("deleteDialog"),
+  deleteWordName: $("deleteWordName"),
+  confirmDelete: $("confirmDelete"),
 };
 
 function sendMessage(type, payload = {}) {
@@ -56,36 +56,41 @@ function sendMessage(type, payload = {}) {
         resolve({ ok: false, error: chrome.runtime.lastError.message });
         return;
       }
-      resolve(response || { ok: false, error: 'No response from the extension worker.' });
+      resolve(
+        response || {
+          ok: false,
+          error: "No response from the extension worker.",
+        },
+      );
     });
   });
 }
 
 function wordEntries() {
   return Object.entries(state.words)
-    .filter(([, value]) => value && typeof value.word === 'string')
+    .filter(([, value]) => value && typeof value.word === "string")
     .map(([key, value]) => ({
       key,
       word: value.word,
-      meaning: typeof value.meaning === 'string' ? value.meaning : '',
+      meaning: typeof value.meaning === "string" ? value.meaning : "",
       savedAt: value.savedAt,
     }));
 }
 
 function letterOf(entry) {
   const initial = entry.word.charAt(0).toUpperCase();
-  return /[A-Z]/.test(initial) ? initial : '#';
+  return /[A-Z]/.test(initial) ? initial : "#";
 }
 
 function compareWords(a, b) {
-  return a.word.localeCompare(b.word, undefined, { sensitivity: 'base' });
+  return a.word.localeCompare(b.word, undefined, { sensitivity: "base" });
 }
 
 function isFreshPreview(preview) {
   return (
     preview &&
-    typeof preview.key === 'string' &&
-    typeof preview.word === 'string' &&
+    typeof preview.key === "string" &&
+    typeof preview.word === "string" &&
     Number.isFinite(preview.savedAt) &&
     Date.now() - preview.savedAt <= PREVIEW_TTL_MS
   );
@@ -96,18 +101,18 @@ function isFreshPreview(preview) {
 /* ------------------------------------------------------------------ */
 
 function showPreview() {
-  state.view = 'preview';
+  state.view = "preview";
   elements.dashboardView.hidden = true;
   elements.previewView.hidden = false;
   elements.appFooter.hidden = true;
   renderPreview();
 
-  const hasMeaning = elements.previewMeaning.textContent.trim() !== '';
+  const hasMeaning = elements.previewMeaning.textContent.trim() !== "";
   if (!hasMeaning) elements.meaningInput.focus();
 }
 
 function showDashboard() {
-  state.view = 'dashboard';
+  state.view = "dashboard";
   elements.previewView.hidden = true;
   elements.dashboardView.hidden = false;
   elements.appFooter.hidden = false;
@@ -119,16 +124,16 @@ function renderPreview() {
   const entry = state.preview;
   if (!entry) return;
 
-  const meaning = typeof entry.meaning === 'string' ? entry.meaning.trim() : '';
-  const hasMeaning = meaning !== '';
+  const meaning = typeof entry.meaning === "string" ? entry.meaning.trim() : "";
+  const hasMeaning = meaning !== "";
 
   elements.previewWord.textContent = entry.word;
-  elements.previewMeaning.textContent = hasMeaning ? meaning : '';
+  elements.previewMeaning.textContent = hasMeaning ? meaning : "";
   elements.previewMeaning.hidden = !hasMeaning;
   elements.meaningForm.hidden = hasMeaning;
 
   if (!hasMeaning && document.activeElement !== elements.meaningInput) {
-    elements.meaningInput.value = '';
+    elements.meaningInput.value = "";
   }
 }
 
@@ -137,23 +142,26 @@ function renderPreview() {
 /* ------------------------------------------------------------------ */
 
 function buildAzBar() {
-  const options = ['ALL', ...LETTERS, '#'];
+  const options = ["ALL", ...LETTERS, "#"];
   elements.azBar.replaceChildren();
 
   for (const option of options) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'az-chip';
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "az-chip";
     button.dataset.letter = option;
-    button.textContent = option === 'ALL' ? 'All' : option;
-    button.setAttribute('aria-pressed', 'false');
+    button.textContent = option === "ALL" ? "All" : option;
+    button.setAttribute("aria-pressed", "false");
     elements.azBar.append(button);
   }
 }
 
 function updateAzBar() {
-  for (const chip of elements.azBar.querySelectorAll('.az-chip')) {
-    chip.setAttribute('aria-pressed', String(chip.dataset.letter === state.activeLetter));
+  for (const chip of elements.azBar.querySelectorAll(".az-chip")) {
+    chip.setAttribute(
+      "aria-pressed",
+      String(chip.dataset.letter === state.activeLetter),
+    );
   }
 }
 
@@ -169,15 +177,18 @@ async function ensureDictionary() {
 
   dictionaryLoading = (async () => {
     try {
-      const response = await fetch(chrome.runtime.getURL('data/dictionary.txt'));
+      const response = await fetch(
+        chrome.runtime.getURL("data/dictionary.txt"),
+      );
       if (!response.ok) throw new Error(`Status ${response.status}`);
       const text = await response.text();
       const source = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
       const collected = new Map();
       for (const line of source.split(/\r?\n/)) {
         const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('#') || !trimmed.startsWith('|')) continue;
-        const second = trimmed.indexOf('|', 1);
+        if (!trimmed || trimmed.startsWith("#") || !trimmed.startsWith("|"))
+          continue;
+        const second = trimmed.indexOf("|", 1);
         if (second === -1) continue;
         const english = trimmed.slice(1, second).trim().toLowerCase();
         const bangla = trimmed.slice(second + 1).trim();
@@ -192,7 +203,7 @@ async function ensureDictionary() {
       dictionaryMap = new Map();
       dictionaryList = [];
       for (const [english, meanings] of collected) {
-        const meaning = meanings.join('; ');
+        const meaning = meanings.join("; ");
         dictionaryMap.set(english, meaning);
         dictionaryList.push({
           key: english,
@@ -201,7 +212,7 @@ async function ensureDictionary() {
         });
       }
     } catch (error) {
-      console.warn('E2B Save Word: could not load dictionary in popup.', error);
+      console.warn("E2B Save Word: could not load dictionary in popup.", error);
       dictionaryMap = new Map();
       dictionaryList = [];
     } finally {
@@ -217,14 +228,20 @@ function setSearchMode(mode) {
   if (state.searchMode === mode) return;
   state.searchMode = mode;
 
-  elements.toggleSaved.setAttribute('aria-pressed', String(mode === 'saved'));
-  elements.toggleSaved.classList.toggle('is-active', mode === 'saved');
+  elements.toggleSaved.setAttribute("aria-pressed", String(mode === "saved"));
+  elements.toggleSaved.classList.toggle("is-active", mode === "saved");
 
-  elements.toggleDictionary.setAttribute('aria-pressed', String(mode === 'dictionary'));
-  elements.toggleDictionary.classList.toggle('is-active', mode === 'dictionary');
+  elements.toggleDictionary.setAttribute(
+    "aria-pressed",
+    String(mode === "dictionary"),
+  );
+  elements.toggleDictionary.classList.toggle(
+    "is-active",
+    mode === "dictionary",
+  );
 
-  if (mode === 'dictionary') {
-    elements.searchInput.placeholder = 'Search dictionary...';
+  if (mode === "dictionary") {
+    elements.searchInput.placeholder = "Search dictionary...";
     if (!dictionaryList) {
       ensureDictionary().then(() => {
         renderDashboard();
@@ -233,7 +250,7 @@ function setSearchMode(mode) {
       renderDashboard();
     }
   } else {
-    elements.searchInput.placeholder = 'Search saved words...';
+    elements.searchInput.placeholder = "Search saved words...";
     renderDashboard();
   }
 
@@ -243,9 +260,9 @@ function setSearchMode(mode) {
 function visibleEntries() {
   const query = state.query.trim().toLowerCase();
 
-  if (state.searchMode === 'dictionary') {
+  if (state.searchMode === "dictionary") {
     if (!dictionaryList) return [];
-    if (!query && state.activeLetter === 'ALL') {
+    if (!query && state.activeLetter === "ALL") {
       return [];
     }
 
@@ -259,8 +276,10 @@ function visibleEntries() {
       }
       entries = [...prefix.sort(compareWords), ...substring.sort(compareWords)];
     }
-    if (state.activeLetter !== 'ALL') {
-      entries = entries.filter((entry) => letterOf(entry) === state.activeLetter);
+    if (state.activeLetter !== "ALL") {
+      entries = entries.filter(
+        (entry) => letterOf(entry) === state.activeLetter,
+      );
     }
     return entries.slice(0, 100);
   }
@@ -268,9 +287,11 @@ function visibleEntries() {
   let entries = wordEntries();
 
   if (query) {
-    entries = entries.filter((entry) => entry.word.toLowerCase().includes(query));
+    entries = entries.filter((entry) =>
+      entry.word.toLowerCase().includes(query),
+    );
   }
-  if (state.activeLetter !== 'ALL') {
+  if (state.activeLetter !== "ALL") {
     entries = entries.filter((entry) => letterOf(entry) === state.activeLetter);
   }
   return entries.sort(compareWords);
@@ -278,15 +299,15 @@ function visibleEntries() {
 
 function renderDashboard() {
   const total = Object.keys(state.words).length;
-  elements.dashboardStatus.textContent = '';
+  elements.dashboardStatus.textContent = "";
 
   const entries = visibleEntries();
   elements.wordList.replaceChildren();
   elements.listRegion.scrollTop = 0;
 
-  if (state.searchMode === 'dictionary') {
+  if (state.searchMode === "dictionary") {
     elements.emptyState.hidden = true;
-    const isDefaultBlank = !state.query.trim() && state.activeLetter === 'ALL';
+    const isDefaultBlank = !state.query.trim() && state.activeLetter === "ALL";
     elements.dictEmptyState.hidden = !isDefaultBlank;
     elements.noResults.hidden = isDefaultBlank || entries.length > 0;
     elements.wordList.hidden = entries.length === 0;
@@ -295,7 +316,7 @@ function renderDashboard() {
       const count = dictionaryList ? dictionaryList.length : 13506;
       elements.footerCount.textContent = `${count} words in dictionary`;
     } else {
-      elements.footerCount.textContent = `${entries.length} ${entries.length === 1 ? 'match' : 'matches'}`;
+      elements.footerCount.textContent = `${entries.length} ${entries.length === 1 ? "match" : "matches"}`;
     }
 
     if (entries.length === 0) return;
@@ -307,7 +328,7 @@ function renderDashboard() {
   }
 
   elements.dictEmptyState.hidden = true;
-  elements.footerCount.textContent = `${total} ${total === 1 ? 'word' : 'words'}`;
+  elements.footerCount.textContent = `${total} ${total === 1 ? "word" : "words"}`;
 
   elements.emptyState.hidden = total !== 0;
   elements.noResults.hidden = !(total > 0 && entries.length === 0);
@@ -315,7 +336,7 @@ function renderDashboard() {
 
   if (entries.length === 0) return;
 
-  if (state.activeLetter === 'ALL' && state.query.trim() === '') {
+  if (state.activeLetter === "ALL" && state.query.trim() === "") {
     renderGrouped(entries);
   } else {
     for (const entry of entries) {
@@ -333,14 +354,14 @@ function renderGrouped(entries) {
   }
 
   const letters = [...groups.keys()].sort((a, b) => {
-    if (a === '#') return 1;
-    if (b === '#') return -1;
+    if (a === "#") return 1;
+    if (b === "#") return -1;
     return a.localeCompare(b);
   });
 
   for (const letter of letters) {
-    const heading = document.createElement('div');
-    heading.className = 'group-heading';
+    const heading = document.createElement("div");
+    heading.className = "group-heading";
     heading.textContent = letter;
     elements.wordList.append(heading);
 
@@ -351,55 +372,58 @@ function renderGrouped(entries) {
 }
 
 function createWordRow(entry) {
-  const row = document.createElement('div');
-  row.className = 'word-row';
+  const row = document.createElement("div");
+  row.className = "word-row";
 
-  const text = document.createElement('div');
-  text.className = 'word-text';
+  const text = document.createElement("div");
+  text.className = "word-text";
 
-  const word = document.createElement('span');
-  word.className = 'word-name';
+  const word = document.createElement("span");
+  word.className = "word-name";
   word.textContent = entry.word;
   word.title = entry.word;
 
-  const meaning = document.createElement('span');
-  meaning.className = 'word-meaning';
-  meaning.textContent = entry.meaning || 'No meaning yet';
-  if (!entry.meaning) meaning.classList.add('is-empty');
-  meaning.title = entry.meaning || 'No meaning yet';
+  const meaning = document.createElement("span");
+  meaning.className = "word-meaning";
+  meaning.textContent = entry.meaning || "No meaning yet";
+  if (!entry.meaning) meaning.classList.add("is-empty");
+  meaning.title = entry.meaning || "No meaning yet";
 
   text.append(word, meaning);
 
-  if (state.searchMode === 'dictionary') {
-    const isSaved = Boolean(state.words && Object.prototype.hasOwnProperty.call(state.words, entry.key));
+  if (state.searchMode === "dictionary") {
+    const isSaved = Boolean(
+      state.words &&
+      Object.prototype.hasOwnProperty.call(state.words, entry.key),
+    );
     if (isSaved) {
-      const badge = document.createElement('span');
-      badge.className = 'saved-badge';
-      badge.textContent = '✓ Saved';
-      badge.title = 'Saved in your list';
+      const badge = document.createElement("span");
+      badge.className = "saved-badge";
+      badge.textContent = "✓ Saved";
+      badge.title = "Saved in your list";
       row.append(text, badge);
     } else {
-      const saveBtn = document.createElement('button');
-      saveBtn.type = 'button';
-      saveBtn.className = 'icon-button icon-button-add';
+      const saveBtn = document.createElement("button");
+      saveBtn.type = "button";
+      saveBtn.className = "icon-button icon-button-add";
       saveBtn.dataset.key = entry.key;
       saveBtn.dataset.word = entry.word;
-      saveBtn.dataset.meaning = entry.meaning || '';
-      saveBtn.dataset.action = 'save';
-      saveBtn.setAttribute('aria-label', `Save ${entry.word}`);
+      saveBtn.dataset.meaning = entry.meaning || "";
+      saveBtn.dataset.action = "save";
+      saveBtn.setAttribute("aria-label", `Save ${entry.word}`);
       saveBtn.title = `Save "${entry.word}" to your list`;
-      saveBtn.textContent = '+';
+      saveBtn.textContent = "+";
       row.append(text, saveBtn);
     }
   } else {
-    const remove = document.createElement('button');
-    remove.type = 'button';
-    remove.className = 'icon-button';
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "icon-button";
     remove.dataset.key = entry.key;
-    remove.dataset.action = 'delete';
-    remove.setAttribute('aria-label', `Delete ${entry.word}`);
+    remove.dataset.action = "delete";
+    remove.setAttribute("aria-label", `Delete ${entry.word}`);
     remove.title = `Delete ${entry.word}`;
-    remove.textContent = '×';
+    remove.textContent = "×";
     row.append(text, remove);
   }
 
@@ -425,21 +449,22 @@ async function confirmDelete() {
   if (!key) return;
 
   elements.confirmDelete.disabled = true;
-  const response = await sendMessage('delete-word', { key });
+  const response = await sendMessage("delete-word", { key });
 
   if (!response.ok) {
     elements.confirmDelete.disabled = false;
-    elements.dashboardStatus.textContent = response.error || 'Could not delete the word.';
+    elements.dashboardStatus.textContent =
+      response.error || "Could not delete the word.";
     return;
   }
 
   state.pendingDeleteKey = null;
   elements.deleteDialog.close();
 
-  const stored = await chrome.storage.local.get('words');
+  const stored = await chrome.storage.local.get("words");
   state.words = stored.words || {};
   renderDashboard();
-  elements.dashboardStatus.textContent = 'Word deleted.';
+  elements.dashboardStatus.textContent = "Word deleted.";
 }
 
 /* ------------------------------------------------------------------ */
@@ -447,13 +472,13 @@ async function confirmDelete() {
 /* ------------------------------------------------------------------ */
 
 async function exportWords() {
-  const stored = await chrome.storage.local.get('words');
+  const stored = await chrome.storage.local.get("words");
   state.words = stored.words || {};
 
   const payload = JSON.stringify({ version: 1, words: state.words }, null, 2);
-  const blob = new Blob([payload], { type: 'application/json' });
+  const blob = new Blob([payload], { type: "application/json" });
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
+  const link = document.createElement("a");
   link.href = url;
   link.download = `e2b-words-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.append(link);
@@ -461,7 +486,7 @@ async function exportWords() {
   link.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-  elements.dashboardStatus.textContent = 'Backup downloaded.';
+  elements.dashboardStatus.textContent = "Backup downloaded.";
 }
 
 async function importFile(file) {
@@ -473,25 +498,25 @@ async function importFile(file) {
       !data ||
       data.version !== 1 ||
       !data.words ||
-      typeof data.words !== 'object' ||
+      typeof data.words !== "object" ||
       Array.isArray(data.words)
     ) {
-      throw new Error('Unsupported or invalid backup file.');
+      throw new Error("Unsupported or invalid backup file.");
     }
 
-    const response = await sendMessage('import-words', { words: data.words });
-    if (!response.ok) throw new Error(response.error || 'Import failed.');
+    const response = await sendMessage("import-words", { words: data.words });
+    if (!response.ok) throw new Error(response.error || "Import failed.");
 
-    const stored = await chrome.storage.local.get('words');
+    const stored = await chrome.storage.local.get("words");
     state.words = stored.words || {};
     renderDashboard();
 
     const { added, skipped } = response.result;
     elements.dashboardStatus.textContent = `Imported ${added} ${
-      added === 1 ? 'word' : 'words'
+      added === 1 ? "word" : "words"
     }, skipped ${skipped}.`;
   } catch (error) {
-    elements.dashboardStatus.textContent = error.message || 'Import failed.';
+    elements.dashboardStatus.textContent = error.message || "Import failed.";
   }
 }
 
@@ -500,73 +525,76 @@ async function importFile(file) {
 /* ------------------------------------------------------------------ */
 
 function bindEvents() {
-  elements.showList.addEventListener('click', async () => {
-    await sendMessage('clear-preview');
+  elements.showList.addEventListener("click", async () => {
+    await sendMessage("clear-preview");
     state.preview = null;
     showDashboard();
   });
 
-  elements.meaningForm.addEventListener('submit', async (event) => {
+  elements.meaningForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!state.preview) return;
 
     const meaning = elements.meaningInput.value.trim();
     if (!meaning) {
-      elements.previewStatus.textContent = 'Enter a meaning before saving.';
+      elements.previewStatus.textContent = "Enter a meaning before saving.";
       elements.meaningInput.focus();
       return;
     }
 
-    const response = await sendMessage('update-meaning', {
+    const response = await sendMessage("update-meaning", {
       key: state.preview.key,
       meaning,
     });
 
     if (!response.ok) {
-      elements.previewStatus.textContent = response.error || 'Could not save the meaning.';
+      elements.previewStatus.textContent =
+        response.error || "Could not save the meaning.";
       return;
     }
 
     state.preview = { ...state.preview, ...response.result };
     state.words[state.preview.key] = response.result;
     renderPreview();
-    elements.previewStatus.textContent = 'Meaning saved.';
+    elements.previewStatus.textContent = "Meaning saved.";
   });
 
-  elements.toggleSaved.addEventListener('click', () => setSearchMode('saved'));
-  elements.toggleDictionary.addEventListener('click', () => setSearchMode('dictionary'));
+  elements.toggleSaved.addEventListener("click", () => setSearchMode("saved"));
+  elements.toggleDictionary.addEventListener("click", () =>
+    setSearchMode("dictionary"),
+  );
 
-  elements.searchInput.addEventListener('input', () => {
+  elements.searchInput.addEventListener("input", () => {
     state.query = elements.searchInput.value;
     renderDashboard();
   });
 
-  elements.azBar.addEventListener('click', (event) => {
-    const button = event.target.closest('button[data-letter]');
+  elements.azBar.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-letter]");
     if (!button) return;
     state.activeLetter = button.dataset.letter;
     updateAzBar();
     renderDashboard();
   });
 
-  elements.wordList.addEventListener('click', async (event) => {
-    const button = event.target.closest('button[data-key]');
+  elements.wordList.addEventListener("click", async (event) => {
+    const button = event.target.closest("button[data-key]");
     if (!button) return;
 
-    if (button.dataset.action === 'save') {
+    if (button.dataset.action === "save") {
       const word = button.dataset.word;
-      const meaning = button.dataset.meaning || '';
+      const meaning = button.dataset.meaning || "";
       button.disabled = true;
-      const response = await sendMessage('save-word', { word, meaning });
+      const response = await sendMessage("save-word", { word, meaning });
       if (response && response.ok) {
-        const stored = await chrome.storage.local.get('words');
+        const stored = await chrome.storage.local.get("words");
         state.words = stored.words || {};
         renderDashboard();
         elements.dashboardStatus.textContent = `"${word}" saved to your list.`;
       } else {
         button.disabled = false;
         elements.dashboardStatus.textContent =
-          (response && response.error) || 'Could not save the word.';
+          (response && response.error) || "Could not save the word.";
       }
       return;
     }
@@ -574,29 +602,31 @@ function bindEvents() {
     requestDelete(button.dataset.key);
   });
 
-  elements.confirmDelete.addEventListener('click', confirmDelete);
+  elements.confirmDelete.addEventListener("click", confirmDelete);
 
-  elements.deleteDialog.addEventListener('close', () => {
+  elements.deleteDialog.addEventListener("close", () => {
     state.pendingDeleteKey = null;
     elements.confirmDelete.disabled = false;
   });
 
-  elements.exportButton.addEventListener('click', exportWords);
+  elements.exportButton.addEventListener("click", exportWords);
 
-  elements.importButton.addEventListener('click', () => elements.importFile.click());
+  elements.importButton.addEventListener("click", () =>
+    elements.importFile.click(),
+  );
 
-  elements.importFile.addEventListener('change', async () => {
+  elements.importFile.addEventListener("change", async () => {
     const file = elements.importFile.files && elements.importFile.files[0];
-    elements.importFile.value = '';
+    elements.importFile.value = "";
     if (file) await importFile(file);
   });
 
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== 'local' || !changes.words) return;
+    if (area !== "local" || !changes.words) return;
 
     state.words = changes.words.newValue || {};
 
-    if (state.view === 'dashboard') {
+    if (state.view === "dashboard") {
       renderDashboard();
       return;
     }
@@ -625,8 +655,9 @@ async function start() {
   bindEvents();
   buildAzBar();
 
-  const stored = await chrome.storage.local.get(['words', 'preview']);
-  state.words = stored.words && typeof stored.words === 'object' ? stored.words : {};
+  const stored = await chrome.storage.local.get(["words", "preview"]);
+  state.words =
+    stored.words && typeof stored.words === "object" ? stored.words : {};
 
   if (isFreshPreview(stored.preview)) {
     state.preview = stored.preview;
@@ -639,4 +670,4 @@ async function start() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', start);
+document.addEventListener("DOMContentLoaded", start);

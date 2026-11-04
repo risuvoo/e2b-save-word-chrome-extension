@@ -12,16 +12,18 @@
     "default_popup": "popup.html",
     "default_title": "E2B Save Word",
     "default_icon": {
-      "24": "assets/logos/icon-24.png",
+      "16": "assets/logos/icon-16.png",
+      "32": "assets/logos/icon-32.png",
       "48": "assets/logos/icon-48.png",
-      "72": "assets/logos/icon-72.png",
+      "128": "assets/logos/icon-128.png",
       "192": "assets/logos/icon-192.png"
     }
   },
   "icons": {
-    "24": "assets/logos/icon-24.png",
+    "16": "assets/logos/icon-16.png",
+    "32": "assets/logos/icon-32.png",
     "48": "assets/logos/icon-48.png",
-    "72": "assets/logos/icon-72.png",
+    "128": "assets/logos/icon-128.png",
     "192": "assets/logos/icon-192.png"
   }
 }
